@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korkoa korolle -laskuri</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #e8e8e8;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #fff;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #8892b0;
+            margin-bottom: 40px;
+            font-size: 1rem;
+        }
+        
+        .calculator-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-group label {
+            font-size: 0.85rem;
+            color: #8892b0;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 16px;
+            padding-right: 50px;
+            font-size: 1.1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: #64ffda;
+            box-shadow: 0 0 20px rgba(100, 255, 218, 0.15);
+        }
+        
+        .input-wrapper .unit {
+            position: absolute;
+            right: 16px;
+            color: #8892b0;
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .result-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .result-card.highlight {
+            background: linear-gradient(135deg, rgba(100, 255, 218, 0.15) 0%, rgba(100, 255, 218, 0.05) 100%);
+            border-color: rgba(100, 255, 218, 0.3);
+        }
+        
+        .result-label {
+            font-size: 0.8rem;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        .result-card.highlight .result-value {
+            color: #64ffda;
+        }
+        
+        .chart-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-title {
+            font-size: 1rem;
+            color: #8892b0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .chart {
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 4px;
+            padding: 20px 10px;
+        }
+        
+        .bar-group {
+            flex: 1;
+            max-width: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .bar-container {
+            width: 100%;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        
+        .bar {
+            width: 100%;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease;
+            position: relative;
+        }
+        
+        .bar.deposits {
+            background: linear-gradient(180deg, #5c6bc0 0%, #3949ab 100%);
+        }
+        
+        .bar.interest {
+            background: linear-gradient(180deg, #64ffda 0%, #1de9b6 100%);
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .bar-label {
+            font-size: 0.7rem;
+            color: #8892b0;
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #8892b0;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+        
+        .legend-color.deposits {
+            background: linear-gradient(180deg, #5c6bc0 0%, #3949ab 100%);
+        }
+        
+        .legend-color.interest {
+            background: linear-gradient(180deg, #64ffda 0%, #1de9b6 100%);
+        }
+        
+        .table-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .table-header h3 {
+            font-size: 1rem;
+            color: #8892b0;
+            font-weight: 500;
+        }
+        
+        .table-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 14px 20px;
+            text-align: right;
+        }
+        
+        th:first-child, td:first-child {
+            text-align: left;
+        }
+        
+        th {
+            background: rgba(0, 0, 0, 0.3);
+            font-size: 0.75rem;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        td {
+            font-size: 0.9rem;
+            color: #e8e8e8;
+        }
+        
+        td:last-child {
+            color: #64ffda;
+            font-weight: 600;
+        }
+        
+        .table-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .table-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 600px) {
+            .calculator-card {
+                padding: 24px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .result-value {
+                font-size: 1.2rem;
+            }
+            
+            th, td {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+            }
+        }
+        
+        .income-calculator {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+        
+        .income-header {
+            margin-bottom: 20px;
+        }
+        
+        .income-header h3 {
+            font-size: 1rem;
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .income-subtitle {
+            font-size: 0.85rem;
+            color: #8892b0;
+        }
+        
+        .income-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .income-input-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .income-input-group label {
+            font-size: 0.85rem;
+            color: #8892b0;
+            white-space: nowrap;
+        }
+        
+        .income-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 120px;
+        }
+        
+        .income-input-wrapper input {
+            width: 100%;
+            padding: 10px 12px;
+            padding-right: 36px;
+            font-size: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        .income-input-wrapper input:focus {
+            outline: none;
+            border-color: #64ffda;
+            box-shadow: 0 0 20px rgba(100, 255, 218, 0.15);
+        }
+        
+        .income-input-wrapper .unit {
+            position: absolute;
+            right: 12px;
+            color: #8892b0;
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+        
+        .income-results {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .income-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .income-row:last-child {
+            border-bottom: none;
+        }
+        
+        .income-label {
+            font-size: 0.9rem;
+            color: #8892b0;
+        }
+        
+        .income-value {
+            font-size: 1rem;
+            color: #e8e8e8;
+            font-weight: 500;
+        }
+        
+        .income-value.tax {
+            color: #ff6b6b;
+        }
+        
+        .highlight-row {
+            background: rgba(100, 255, 218, 0.1);
+            margin: 8px -16px -8px -16px;
+            padding: 16px;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .highlight-row .income-label {
+            color: #fff;
+            font-weight: 500;
+        }
+        
+        .highlight-value {
+            font-size: 1.3rem;
+            color: #64ffda !important;
+            font-weight: 700;
+        }
+        
+        @media (max-width: 600px) {
+            .income-input-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .income-input-wrapper {
+                width: 100%;
+            }
+            
+            .highlight-row {
+                margin: 8px -12px -12px -12px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Korkoa korolle -laskuri</h1>
+        <p class="subtitle">Laske sijoitustesi kasvu ajan myötä</p>
+        
+        <div class="calculator-card">
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>Alkupääoma</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="initialCapital" value="10000" min="0" step="100">
+                        <span class="unit">€</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Kuukausittainen lisäsijoitus</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="monthlyContribution" value="200" min="0" step="10">
+                        <span class="unit">€</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Vuosituotto</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="annualReturn" value="7" min="0" max="100" step="0.1">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Sijoitusaika</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="years" value="20" min="1" max="50" step="1">
+                        <span class="unit">v</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-grid">
+                <div class="result-card highlight">
+                    <div class="result-label">Loppusumma</div>
+                    <div class="result-value" id="totalValue">0 €</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Sijoitettu yhteensä</div>
+                    <div class="result-value" id="totalDeposits">0 €</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Tuotto yhteensä</div>
+                    <div class="result-value" id="totalInterest">0 €</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Tuoton osuus</div>
+                    <div class="result-value" id="interestPercentage">0%</div>
+                </div>
+            </div>
+            
+            <div class="income-calculator">
+                <div class="income-header">
+                    <h3>Kuukausituotto loppusummalle</h3>
+                    <p class="income-subtitle">Paljonko loppusumma tuottaisi kuukausittain elämiseen?</p>
+                </div>
+                <div class="income-content">
+                    <div class="income-input-group">
+                        <label>Oletettu vuosituotto</label>
+                        <div class="income-input-wrapper">
+                            <input type="number" id="incomeReturn" value="4" min="0" max="100" step="0.1">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                    <div class="income-results">
+                        <div class="income-row">
+                            <span class="income-label">Vuosituotto brutto</span>
+                            <span class="income-value" id="yearlyGross">0 €</span>
+                        </div>
+                        <div class="income-row">
+                            <span class="income-label">Pääomavero (30%)</span>
+                            <span class="income-value tax" id="taxAmount">−0 €</span>
+                        </div>
+                        <div class="income-row">
+                            <span class="income-label">Vuosituotto netto</span>
+                            <span class="income-value" id="yearlyNet">0 €</span>
+                        </div>
+                        <div class="income-row highlight-row">
+                            <span class="income-label">Kuukausituotto netto</span>
+                            <span class="income-value highlight-value" id="monthlyNet">0 €</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">Varallisuuden kehitys vuosittain</div>
+            <div class="chart" id="chart"></div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color deposits"></div>
+                    <span>Sijoitettu pääoma</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color interest"></div>
+                    <span>Kertynyt tuotto</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Vuosittainen erittely</h3>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vuosi</th>
+                            <th>Sijoitettu</th>
+                            <th>Tuotto</th>
+                            <th>Yhteensä</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('fi-FI', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value) + ' €';
+        }
+        
+        function calculate() {
+            const initialCapital = parseFloat(document.getElementById('initialCapital').value) || 0;
+            const monthlyContribution = parseFloat(document.getElementById('monthlyContribution').value) || 0;
+            const annualReturn = parseFloat(document.getElementById('annualReturn').value) || 0;
+            const years = parseInt(document.getElementById('years').value) || 1;
+            
+            const monthlyRate = annualReturn / 100 / 12;
+            const yearlyData = [];
+            
+            let currentValue = initialCapital;
+            let totalDeposits = initialCapital;
+            
+            for (let year = 1; year <= years; year++) {
+                for (let month = 1; month <= 12; month++) {
+                    currentValue = currentValue * (1 + monthlyRate) + monthlyContribution;
+                    totalDeposits += monthlyContribution;
+                }
+                
+                yearlyData.push({
+                    year: year,
+                    deposits: totalDeposits,
+                    total: currentValue,
+                    interest: currentValue - totalDeposits
+                });
+            }
+            
+            const finalValue = currentValue;
+            currentFinalValue = finalValue;
+            const finalDeposits = totalDeposits;
+            const finalInterest = finalValue - finalDeposits;
+            const interestPercentage = finalDeposits > 0 ? (finalInterest / finalValue * 100) : 0;
+            
+            document.getElementById('totalValue').textContent = formatCurrency(finalValue);
+            document.getElementById('totalDeposits').textContent = formatCurrency(finalDeposits);
+            document.getElementById('totalInterest').textContent = formatCurrency(finalInterest);
+            document.getElementById('interestPercentage').textContent = interestPercentage.toFixed(1) + '%';
+            
+            renderChart(yearlyData);
+            renderTable(yearlyData);
+            calculateIncome();
+        }
+        
+        function renderChart(data) {
+            const chart = document.getElementById('chart');
+            chart.innerHTML = '';
+            
+            const maxValue = Math.max(...data.map(d => d.total));
+            const maxBars = 20;
+            const step = Math.ceil(data.length / maxBars);
+            const filteredData = data.filter((_, i) => (i + 1) % step === 0 || i === data.length - 1);
+            
+            filteredData.forEach(item => {
+                const barGroup = document.createElement('div');
+                barGroup.className = 'bar-group';
+                
+                const barContainer = document.createElement('div');
+                barContainer.className = 'bar-container';
+                
+                const depositHeight = (item.deposits / maxValue) * 100;
+                const interestHeight = (item.interest / maxValue) * 100;
+                
+                const interestBar = document.createElement('div');
+                interestBar.className = 'bar interest';
+                interestBar.style.height = interestHeight + '%';
+                
+                const depositBar = document.createElement('div');
+                depositBar.className = 'bar deposits';
+                depositBar.style.height = depositHeight + '%';
+                
+                barContainer.appendChild(interestBar);
+                barContainer.appendChild(depositBar);
+                
+                const label = document.createElement('div');
+                label.className = 'bar-label';
+                label.textContent = item.year + ' v';
+                
+                barGroup.appendChild(barContainer);
+                barGroup.appendChild(label);
+                chart.appendChild(barGroup);
+            });
+        }
+        
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>Vuosi ${item.year}</td>
+                    <td>${formatCurrency(item.deposits)}</td>
+                    <td>${formatCurrency(item.interest)}</td>
+                    <td>${formatCurrency(item.total)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+        
+        document.getElementById('incomeReturn').addEventListener('input', calculateIncome);
+        
+        let currentFinalValue = 0;
+        
+        function calculateIncome() {
+            const incomeReturn = parseFloat(document.getElementById('incomeReturn').value) || 0;
+            const taxRate = 0.30;
+            
+            const yearlyGross = currentFinalValue * (incomeReturn / 100);
+            const taxAmount = yearlyGross * taxRate;
+            const yearlyNet = yearlyGross - taxAmount;
+            const monthlyNet = yearlyNet / 12;
+            
+            document.getElementById('yearlyGross').textContent = formatCurrency(yearlyGross);
+            document.getElementById('taxAmount').textContent = '−' + formatCurrency(taxAmount);
+            document.getElementById('yearlyNet').textContent = formatCurrency(yearlyNet);
+            document.getElementById('monthlyNet').textContent = formatCurrency(monthlyNet);
+        }
+        
+        calculate();
+    </script>
+</body>
+</html>
